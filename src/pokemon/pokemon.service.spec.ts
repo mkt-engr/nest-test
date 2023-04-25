@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { DeepMocked, createMock } from '@golevelup/ts-jest';
+import { create } from 'domain';
 
 describe('PokemonService', () => {
   let pokemonService: PokemonService;
@@ -13,14 +14,10 @@ describe('PokemonService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PokemonService,
-        {
-          provide: HttpService,
-          useValue: createMock<HttpService>(),
-        },
-      ],
-    }).compile();
+      providers: [PokemonService],
+    })
+      .useMocker(createMock) //テストモジュールで定義していない依存関係をモックできる（ここではHttpService）
+      .compile();
 
     pokemonService = module.get<PokemonService>(PokemonService);
     httpService = module.get(HttpService);
