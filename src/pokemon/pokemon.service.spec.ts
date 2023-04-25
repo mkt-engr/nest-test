@@ -1,18 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PokemonService } from './pokemon.service';
-import { HttpModule } from '@nestjs/axios';
-import { BadRequestException } from '@nestjs/common';
+import { HttpModule, HttpService } from '@nestjs/axios';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { DeepMocked, createMock } from '@golevelup/ts-jest';
 
 describe('PokemonService', () => {
   let pokemonService: PokemonService;
+  let httpService: DeepMocked<HttpService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [HttpModule],
-      providers: [PokemonService],
+      providers: [
+        PokemonService,
+        {
+          provide: HttpService,
+          useValue: createMock<HttpService>(),
+        },
+      ],
     }).compile();
 
     pokemonService = module.get<PokemonService>(PokemonService);
+    httpService = module.get(HttpService);
   });
 
   it('should be defined', () => {
@@ -37,11 +48,41 @@ describe('PokemonService', () => {
     });
 
     it(`ポケモンの名前を返す有効なポケモンIDだった場合`, async () => {
+      //準備
+      httpService.axiosRef.mockResolvedValueOnce({
+        data: {
+          species: { name: `bulbasaur` },
+        },
+        headers: {},
+        config: { url: '' },
+        status: 200,
+        statusText: '',
+      });
+
       //実行
       const getPokemon = pokemonService.getPokemon(1);
 
       //検証
       await expect(getPokemon).resolves.toBe(`bulbasaur`);
+    });
+
+    it(`ポケモンAPIに変更があり想定外のレスポンスがあった場合エラーを返す`, async () => {
+      //準備
+      httpService.axiosRef.mockResolvedValueOnce({
+        data: `Unexpected data`,
+        headers: {},
+        config: { url: '' },
+        status: 200,
+        statusText: '',
+      });
+
+      //実行
+      const getPokemon = pokemonService.getPokemon(1);
+
+      //検証
+      await expect(getPokemon).rejects.toBeInstanceOf(
+        InternalServerErrorException,
+      );
     });
   });
 });
