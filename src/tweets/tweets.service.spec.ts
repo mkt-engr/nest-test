@@ -45,13 +45,14 @@ describe('TweetsService', () => {
   });
 
   describe('ツイートの更新', () => {
-    it('更新内容が空の場合はエラーを返すこと', () => {
+    it('存在しないツイートを更新しようとした場合はエラーを返すこと', () => {
       //準備
+      const tweetIdNotExist = 1000;
       const payload = ``;
 
       //実行
       const updatedTweet = () => {
-        return service.updateTweet(payload, 1);
+        return service.updateTweet(payload, tweetIdNotExist);
       };
 
       //検証
@@ -83,6 +84,46 @@ describe('TweetsService', () => {
 
       //検証
       expect(updatedTweet).toEqual(payload);
+    });
+  });
+
+  describe('ツイートの取得', () => {
+    it(`ツイートの取得`, () => {
+      //準備
+      const firstTweet = [`最初のツイート`];
+      service.tweets = firstTweet;
+
+      //実行
+      const tweet = service.getTweets();
+
+      //検証
+      expect(tweet).toEqual(firstTweet);
+    });
+  });
+
+  describe(`ツイートの削除`, () => {
+    it(`ツイートの削除`, () => {
+      //準備
+      const text = [`削除されるツイート`];
+      service.tweets = text;
+
+      //実行
+      const tweet = service.deleteTweet(0);
+
+      //検証
+      expect(tweet).toEqual([]);
+    });
+
+    it(`存在しないツイートを削除しようとした場合にエラーが出ること`, () => {
+      //準備
+      const tweetIdNotExist = 10000;
+      service.tweets = [`1`];
+
+      //実行
+      const tweet = () => service.deleteTweet(tweetIdNotExist);
+
+      //検証
+      expect(tweet).toThrowError();
     });
   });
 });
